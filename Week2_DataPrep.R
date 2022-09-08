@@ -87,20 +87,28 @@ head( obs_df ); dim( obs_df )
 # How many sites were sampled?
 I <- length( unique( obs_df$o.sites ) )
 I
+# I = 100
+
 # What years were sampled (primary seasons)?
 yrrange <- sort( unique( obs_df$year) )
 yrrange
+#2007-2018
+
 #How many years (i.e., primary seasons )?
 T <- length( yrrange )
 T
+#T = 12
+
 # How many replicate surveys
 J <- 3
 #view
 I; yrrange; T; J
+
 # For our 1st set of data we create a closed population dataframe #
 # that only includes the last year data, and columns that are #
 # relevant. Note we don't include time of day because it is only #
 # relevant to point counts.
+
 # Select obs_df:
 closeddf <- obs_df %>% 
   #filter only rows for last year:
@@ -112,9 +120,11 @@ closeddf <- obs_df %>%
 
 #view resulting dataframe
 head( closeddf ); dim( closeddf )
+#result = 100 rows, 8 columns
 
 # How many detections each survey across our 100 sites?
 colSums( closeddf[, c("pres.j1", "pres.j2","pres.j3")])
+#j1 = 18; j2 = 22; j3 = 18 (relatively low observations across 100 sites)
 
 # We also check for missing values in the response #
 colSums( is.na( closeddf[, c("pres.j1", "pres.j2","pres.j3")]) )
@@ -125,8 +135,12 @@ colSums( is.na( closeddf[, c("pres.j1", "pres.j2","pres.j3")]) )
 # view
 head( preddf ); dim( preddf )
 # Before thinking of whether we can include predictors in our#
-# models we should check their distribution and correlation #
-# Why?
+# models we should check their distribution and correlation  #
+# Why?                                                       #
+# -- predictors should be standardized (since they occur     #
+# across various scales) and should not correlate. If strong #
+# correlation exists, creates unnecessary redundancy.        #
+
 # We start by checking for outliers, skewed distribution etc #
 # create a vector with predictor names
 prednames <- c("cheatgrass", "sagebrush", "Feb.minT", "AprMay.maxT" )
@@ -143,7 +157,9 @@ for( p in 1:length(prednames) ){
 }
 # What do you note? Any apparent issues with these data?
 # Answer:
-#
+# Sagebrush is left-side skewed; very little variation in Feb.minT 
+# and gap between -12 and -8 deg
+
 # Let's plot how predictors vary annually:
 for( p in 1:length(prednames) ){
   # We can also incorporate site variability for habitat:

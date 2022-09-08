@@ -108,7 +108,7 @@ obs_df <- obs_df %>%
 # PitTagTD. = unique identifier for each animal
 # BLUP = best linear unbiased predictor for boldness (>0 = more bold, 
 #    <0 = less bold)
-# Year = year of trapping effort
+# Year = year of trapping efforts
 # Poop = whether a fecal sample was collected
 # Wiggle.time..s. = time spent in motion duringhandling bag test (use BLUP for
 #    personality, not wiggle)
