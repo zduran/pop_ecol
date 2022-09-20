@@ -54,6 +54,9 @@ head( closeddf ); dim( closeddf )
 # We expect occupancy to be influenced by habitat (sagebrush and cheatgrass) #
 # Why don't we include temperature in this model for one season?
 # Answer: 
+# after data exploration of predictors last week, we noticed that #
+# temperature did not vary much (for min temp), but more importantly, temp #
+# was avg for the season, not vary by each observation.
 #
 # Let's define our unmarked dataframe:
 # Start by defining which columns represent the response (observed occurrences)
@@ -76,31 +79,30 @@ siteCovs( umf ) <- sc
 # View summary of unmarked dataframe:
 summary( umf )
 # What does it tell us?
-# 
 # 100 sites
-# Maximum number of observations per site: 3 
-# Mean number of observations per site: 3 
-# Sites with at least one detection: 27 
+# Maximum number of observations per site: 3
+# Mean number of observations per site: 3
+# Sites with at least one detection: 27 (i.e., generally low detection)
 # 
 # Tabulation of y observations:
-#   0   1 
-# 242  58 
+#   0   1
+# 242  58
 # 
 # Site-level covariates:
-#   sagebrush         cheatgrass      
-# Min.   :-0.9160   Min.   :-2.49742  
-# 1st Qu.:-0.7330   1st Qu.:-0.67679  
-# Median :-0.3096   Median : 0.05632  
-# Mean   : 0.0000   Mean   : 0.00000  
-# 3rd Qu.: 0.4570   3rd Qu.: 0.65349  
-# Max.   : 4.0040   Max.   : 3.13440  
+#   sagebrush         cheatgrass
+# Min.   :-0.9160   Min.   :-2.49742
+# 1st Qu.:-0.7330   1st Qu.:-0.67679
+# Median :-0.3096   Median : 0.05632
+# Mean   : 0.0000   Mean   : 0.00000
+# 3rd Qu.: 0.4570   3rd Qu.: 0.65349
+# Max.   : 4.0040   Max.   : 3.13440
 # 
 # Observation-level covariates:
-#      obsv   
-# tech.1:77  
-# tech.2:66  
-# tech.3:76  
-# tech.4:81 
+#      obsv
+# tech.1:77
+# tech.2:66
+# tech.3:76
+# tech.4:81
 
 ### end data prep -----------
 
@@ -153,12 +155,12 @@ confint( fm.closed, type = "state" )
 
 # coefficients for detection submodel:
 confint( fm.closed, type = 'det' )
-#
+
 # Based on the overlap of the 95% CIs for your predictor coefficients, #
 # can you suggest which may be important to each of your responses? #
 # Answer:
 # sagebrush coefficient overlap 0, may not have influence on detection; 
-# observers do influence detection (all but one obsv.tech3)
+# observers do influence detection (all but one--> obsv.tech3)
 #############end full model ###########
 
 ###### Model selection ---------------------------------------
@@ -219,14 +221,18 @@ modelList
 #
 # Does this change the inference from running the full model alone? How?
 # Answer:
+# It does not, these top models show that sagebrush could be left out or remain
+# and it does not significantly change the power of prediction (w/in 2 deltaAIC)
 # 
 # When is model selection a suitable approach?
 # Answer:
+# When models are built after competing hypotheses, not to explore erroneous
+# variables.
 #
 
 # What would our estimates of occupancy be if we had not done any modeling?
 # calculate naive occupancy by assigning a site as occupied if occurrence was #
-# detected in any of the surveys, and as empty if ocurrence was not detected #
+# detected in any of the surveys, and as empty if occurrence was not detected #
 # in any of the surveys:
 y.naive <- ifelse( rowSums( closeddf[ ,c("pres.j1", "pres.j2", "pres.j3")])>0,1,0)
 
@@ -248,6 +254,9 @@ data.frame( y.naive, y.est.fm.closed, y.est.fm.5, y.est.fm.16 )
 # What do these results tell us about the importance of accounting for effects #
 # that impact detection?
 # Answer:
+# Since this is simulated data, the predicted versus actual values were exact; 
+# this demonstrates that predictors are essential in making the predicted occup.
+# as close to actual as possible.
 
 # What was the estimated mean occupancy while keeping #
 # sagebrush and cheatgrass at their mean values:
@@ -258,7 +267,7 @@ backTransform( linearComb( fm.closed, coefficients = c(1,0,0) ,
 # The predictors are scaled so their mean is 0, the intercept is 1, thus: c(1,0,0).#
 # What was our estimated occupancy?
 # Answer:
-#
+# 0.235 pct
 # What about our mean probability of detection for each observer?
 # We start with observer 1:
 backTransform( linearComb( fm.closed, coefficients = c(1,0,0,0,0), type = "det" ) )
@@ -274,7 +283,8 @@ backTransform( linearComb( fm.closed, coefficients = c(1,0,0,0,1), type = "det" 
 # What do these results tell us about what drives occupancy and detection of #
 # Piute ground squirrels in 2007?
 # Answer:
-#
+# Detection, and therefore predicted occupancy, varies by observer, so observer
+# should be included in the detection model. 
 
 # end of analysis ######
 
@@ -287,7 +297,7 @@ save.image( "OccAnalysisWorkspace.RData" )
 
 # Why don't we want to re-run the analyses every time instead?
 # Answer:
-#
+# unnecessary duplication of efforts?
 
 ########## End of saving section ##################################
 
