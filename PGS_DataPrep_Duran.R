@@ -69,7 +69,6 @@ obs_df <- read.csv( file = paste( datadir, "CleanTrapData.csv", sep = ""),
 #view
 head( obs_df ); dim(obs_df)
 str(obs_df)
-### ZD NOTE- ADD BLUP TO TABLE OR RELATIONAL PREDICTOR TABLE KEY=PIT###
 
 #load predictor data; using trap_preds_ijk.csv for now
 preddf <- read.csv( file = paste( datadir, "trap_preds_ijk.csv", sep = ""),
@@ -88,7 +87,8 @@ head( obs_df ); dim( obs_df )
 # Rename column (name to right of '=' is the old name)
 obs_df <- obs_df %>%
   rename(Recap = Recapture..Y.N.)
-
+obs_df <- obs_df %>%
+  rename(year = Year)
 # Our observations dataframe metadata:
 # WebName = site id (I)
 # OpenTime = time traps were opened
@@ -110,7 +110,7 @@ obs_df <- obs_df %>%
 #    <0 = less bold)
 # Year = year of trapping efforts
 # Poop = whether a fecal sample was collected
-# Wiggle.time..s. = time spent in motion duringhandling bag test (use BLUP for
+# Wiggle.time..s. = time spent in motion during handling bag test (use BLUP for
 #    personality, not wiggle)
 # date = date of trapping day
 # ProcessHr = hour of day animal was processed
@@ -125,7 +125,7 @@ I <- length( unique( obs_df$WebName ) )
 I
 
 # What years were sampled (primary seasons)?
-yrrange <- sort( unique( obs_df$Year) )
+yrrange <- sort( unique( obs_df$year) )
 yrrange
 
 #How many years (i.e., primary seasons )?
@@ -145,10 +145,10 @@ I; yrrange; T; J
 # Select obs_df:
 closeddf <- obs_df %>% 
   #filter only rows for 2019:
-  dplyr::filter( Year == '2019') %>%
+  dplyr::filter( year == '2019') %>%
   #select desired columns to keep:
   dplyr::select( WebName, TrapID, Sex, NetWeight.g., AgeClass, Recap, 
-                 PitTagID., BLUP, jday, month, Year) 
+                 PitTagID., BLUP, jday, month, year) 
 #view resulting dataframe
 head( closeddf ); dim( closeddf )
 
@@ -171,7 +171,7 @@ head( preddf ); dim( preddf )
 # Why?
 # We start by checking for outliers, skewed distribution etc #
 # create a vector with predictor names
-prednames <- c("cheatgrass", "sagebrush", "Feb.minT", "AprMay.maxT" )
+prednames <- c("tempC_st", "wind_kmph_st" )
 # loop over each to create histograms for each predictor:
 for( p in 1:length(prednames) ){
   # create an object with the ggplot so that you can display it 
@@ -195,7 +195,7 @@ for( p in 1:length(prednames) ){
     labs( y = prednames[p] ) + #label x axis using our predictor names
     # plot each site individually
     geom_line( aes( x = year, y = get(prednames[p]),
-                    color = as.factor(o.sites) ), size = 1.5 )
+                    color = as.factor(WebName) ), size = 1.5 )
   
   # Here we rely on a smoothing spline to get mean annual trends #
   # across all sites:
@@ -220,8 +220,8 @@ cor( preddf[ , prednames] )
 # Now that we are satisfied with our predictor data we can #
 # append it to our new closeddf:
 closeddf <- #select the columns we want to keep in preddf 
-  preddf %>% dplyr::select( o.sites, year, all_of(prednames) ) %>%
-  right_join( closeddf, by = c("o.sites", "year") )
+  preddf %>% dplyr::select( WebName, year, all_of(prednames) ) %>%
+  right_join( closeddf, by = c("WebName", "year") )
 # why did we use right_join instead of left_join?
 # check output #note that I always check dimensions when joining
 # dataframes. Sometimes we add or substract rows unintentionally 
@@ -234,40 +234,47 @@ head( closeddf); dim( closeddf )
 head( obs_df )
 opendf <-  obs_df %>%
   #select desired columns to keep:
-  dplyr::select( o.sites, year, pres.j1, pres.j2, pres.j3,
-                 observer.j1, observer.j2, observer.j3 ) 
+  dplyr::select( WebName, TrapID, Sex, NetWeight.g., AgeClass, Recap, 
+                 PitTagID., BLUP, jday, month, year ) 
 #check
 head( opendf ); dim( opendf )
 # We append predictors:
 opendf <- preddf %>% 
-  dplyr::select( o.sites, year, all_of(prednames) ) %>%
-  left_join( opendf, by = c("o.sites", "year") )
+  dplyr::select( WebName, year, all_of(prednames) ) %>%
+  left_join( opendf, by = c("WebName", "year") )
 #check
 head( opendf ); dim( opendf )
 # We also check for missing values in the response #
 # as those are often not allowed in frequentist analyses
-colSums( is.na( opendf[, c("pres.j1", "pres.j2","pres.j3")]) )
-#none are present
+colSums( is.na( opendf[, c("Recap", "PitTagID.")]) )
+###QUESTION- what is response in mark-recap dataset? "Recap"? "PITTagID"?
+#What happens when PIT or recap is NA? wHow can I quick view these records
+#and how do I remove them?
 
 ################################################################
 ##########    save relevant data and workspaces     ###########
+# Check that you are in the right project folder
+getwd()
 #save closed dataframe in our data folder:
-write.csv( closeddf, paste( getwd(),"/Data/closedf.csv", sep = "" ),  
+write.csv( closeddf, paste( getwd(),
+                            "/GroundSquirrelCapt-Recapt/PGS_2019_closedf.csv", 
+                            sep = "" ),  
            row.names = FALSE )
 
 #save open dataframe in our data folder:
-write.csv( opendf, paste( getwd(),"/Data/opendf.csv", sep = "" ),  
+write.csv( opendf, paste( getwd(),"/GroundSquirrelCapt-Recapt/PGS_opendf.csv", 
+                          sep = "" ),  
            row.names = FALSE )
 
 # if you want to save any of the plots we produced #
 # for your presentation or ms, you do it here too:
 # Save the most recently viewed plot with ggsave() to define file type, resolution, 
 # and plot dimensions:
-ggsave("Data/AprMayTXYear.png", dpi=500, 
+ggsave("GroundSquirrelCapt-Recapt/AprMayTXYear.png", dpi=500, 
        height = 10, width = 15, units= "cm" )
 # or if you saved it as an object:
 #start by calling the file where you will save it
-tiff( 'Data/FebTXYear.tiff',
+tiff( 'GroundSquirrelCapt-Recapt/FebTXYear.tiff',
       height = 10, width = 15, units = 'cm', 
       compression = "lzw", res = 400 )
 #call the plot
@@ -277,7 +284,7 @@ dev.off()
 
 # if you want to save your workspace, because you are still #
 # working through it use the following command:
-#save.image( "DataPrepWorkspace.RData" )
+save.image( "DataPrepWorkspace.RData" )
 ########## End of saving section ##################################
 ################## Save your data and workspace ###################
 
