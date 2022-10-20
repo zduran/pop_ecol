@@ -11,7 +11,8 @@
 ## to estimate site abundance of Piute ground squirrels.             ## 
 ##  Site locations were randomly selected within the study area     ###
 ## ensuring that they were at least 1.5km m apart for independence.  ##
-## Sampling occurred during 2013-2019. Mark-recapture trapping       ##
+## Sampling occurred during 2013-2019, 2021 and 2022. Mark-recapture 
+## trapping       ##
 ## occurred at eight sites representing four general habitat types.  ##
 ## A robust study design was used with primary trapping periods      ##
 ## representing either year or season within year (depending on the  ##
@@ -69,6 +70,7 @@ obs_df <- read.csv( file = paste( datadir, "CleanTrapData.csv", sep = ""),
 #view
 head( obs_df ); dim(obs_df)
 str(obs_df)
+
 
 #load predictor data; using trap_preds_ijk.csv for now
 preddf <- read.csv( file = paste( datadir, "trap_preds_ijk.csv", sep = ""),
@@ -148,7 +150,7 @@ closeddf <- obs_df %>%
   dplyr::filter( year == '2019') %>%
   #select desired columns to keep:
   dplyr::select( WebName, TrapID, Sex, NetWeight.g., AgeClass, Recap, 
-                 PitTagID., BLUP, jday, month, year) 
+                 PitTagID., BLUP, jday, month, year, Survey) 
 #view resulting dataframe
 head( closeddf ); dim( closeddf )
 
@@ -170,8 +172,12 @@ head( preddf ); dim( preddf )
 # models we should check their distribution and correlation #
 # Why?
 # We start by checking for outliers, skewed distribution etc #
+
+# turn trapping effort into an integar rather than character
+preddf$effort_mins = lubridate::time_length( preddf$effort, unit = "minutes" )
+
 # create a vector with predictor names
-prednames <- c("tempC_st", "wind_kmph_st" )
+prednames <- c("tempC_st", "wind_kmph_st", "effort_mins")
 # loop over each to create histograms for each predictor:
 for( p in 1:length(prednames) ){
   # create an object with the ggplot so that you can display it 
@@ -220,14 +226,15 @@ cor( preddf[ , prednames] )
 # Now that we are satisfied with our predictor data we can #
 # append it to our new closeddf:
 closeddf <- #select the columns we want to keep in preddf 
-  preddf %>% dplyr::select( WebName, year, all_of(prednames) ) %>%
-  right_join( closeddf, by = c("WebName", "year") )
+  preddf %>% dplyr::select( jday, WebName, year, Survey, all_of(prednames) ) %>%
+  right_join( closeddf, by = c("WebName", "year","jday") )
 # why did we use right_join instead of left_join?
 # check output #note that I always check dimensions when joining
 # dataframes. Sometimes we add or substract rows unintentionally 
 # so it is good to check that your code had the desired result
 head( closeddf); dim( closeddf )
 
+##############CLOSED ENDS HERE#########################################
 ########################################################################
 # We repeat the process for our robust design. we want to join #
 # the two dataframes keeping relevant columns 
